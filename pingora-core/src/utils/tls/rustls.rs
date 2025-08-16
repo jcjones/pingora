@@ -13,7 +13,7 @@
 // limitations under the License.
 
 use ouroboros::self_referencing;
-use pingora_error::Result;
+use pingora_error::{ErrorType::*, OrErr, Result};
 use pingora_rustls::CertificateDer;
 use std::hash::{Hash, Hasher};
 use x509_parser::prelude::{FromDer, X509Certificate};
@@ -180,6 +180,15 @@ impl CertKey {
 impl WrappedX509 {
     pub fn not_after(&self) -> String {
         self.borrow_cert().validity.not_after.to_string()
+    }
+
+    // Construct a X509 certificate from raw bytes.
+    pub fn from_der(der: &[u8]) -> Result<Self> {
+        WrappedX509::try_new(der.to_vec(), |der| {
+            Ok(X509Certificate::from_der(der)
+                .or_err(InvalidCert, "Invalid DER")?
+                .1)
+        })
     }
 }
 
